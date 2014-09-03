@@ -11,25 +11,25 @@ func main() {
 	for _, path := range os.Args[1:] {
 		t, err := template.ParseFiles(path)
 		if err != nil {
-			fmt.Println(path, " parsing:", err)
+			fmt.Println(path, "parsing:", err)
 			os.Exit(1)
 		}
 
 		wr, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0)
 		if err != nil {
-			fmt.Println(path, " writing:", err)
+			fmt.Println(path, "writing:", err)
 			os.Exit(1)
 		}
 
 		err = t.Execute(wr, environ())
 		if err != nil {
-			fmt.Println(path, " executing:", err)
+			fmt.Println(path, "executing:", err)
 			os.Exit(1)
 		}
 
 		err = wr.Close()
 		if err != nil {
-			fmt.Println(path, " closing:", err)
+			fmt.Println(path, "closing:", err)
 			os.Exit(1)
 		}
 	}
