@@ -57,7 +57,7 @@ func processStdio(env map[string]string) {
 	}
 }
 
-func processFile(path string, env map[string]string) {
+func processFile(sourcePath, destPath string, env map[string]string) {
 	var (
 		t   *template.Template
 		err error
@@ -65,13 +65,13 @@ func processFile(path string, env map[string]string) {
 	)
 
 	/* parse the file as a template */
-	t, err = template.ParseFiles(path)
+	t, err = template.ParseFiles(sourcePath)
 	if err != nil {
-		failwith("parsing file %s <%s>", path, err)
+		failwith("parsing file %s <%s>", sourcePath, err)
 	}
 
-	/* empty then open the same file for writing */
-	wr, err = os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0)
+	/* empty and open the destination file for writing */
+	wr, err = os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		failwith("open file for write <%s>", err)
 	}
@@ -123,8 +123,10 @@ func main() {
 	for _, path := range flag.Args() {
 		if path == "-" {
 			processStdio(env)
+		} else if i := strings.Index(path, ":"); i >= 0 {
+			processFile(path[:i], path[i+1:], env)
 		} else {
-			processFile(path, env)
+			processFile(path, path, env)
 		}
 	}
 
