@@ -1,16 +1,25 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
+	"syscall"
 	"text/template"
+
+	"github.com/kballard/go-shellquote"
 )
 
 func main() {
 	env := whole_environ()
 
-	for _, path := range os.Args[1:] {
+	/* parse flags */
+	execp := flag.String("e", "", "command to exec after processing all files")
+	flag.Parse()
+
+	for _, path := range flag.Args() {
 
 		/* parse the file as a template */
 		t, err := template.ParseFiles(path)
@@ -40,6 +49,20 @@ func main() {
 			fmt.Println(path, "closing:", err)
 			os.Exit(1)
 		}
+	}
+
+	if *execp != "" {
+		cmd, err := shellquote.Split(*execp)
+		if err != nil {
+			fmt.Println("cmd parse:", err)
+			os.Exit(1)
+		}
+		cmdpath, err := exec.LookPath(cmd[0])
+		if err != nil {
+			fmt.Println("cmd lookup:", err)
+			os.Exit(1)
+		}
+		syscall.Exec(cmdpath, cmd, os.Environ())
 	}
 }
 
