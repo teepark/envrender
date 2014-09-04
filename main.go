@@ -68,15 +68,20 @@ func main() {
 	}
 
 	if *execp != "" {
+		/* parse shell arguments in the -e command */
 		cmd, err := shellquote.Split(*execp)
 		if err != nil {
 			panic(err)
 		}
+
+		/* find the executable */
 		cmdpath, err := exec.LookPath(cmd[0])
 		if err != nil {
 			panic(err)
 		}
-		syscall.Exec(cmdpath, cmd, os.Environ())
+
+		/* and exec it */
+		panic(syscall.Exec(cmdpath, cmd, os.Environ()))
 	}
 }
 
