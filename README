@@ -11,7 +11,7 @@ from stdin and output the result on stdout.
 It also supports one flag, "-e", which takes a string of a command to exec
 after it finishes processing files.
 
-The original use-case was for docker containers that utilize links. IP
+The original use-case is for docker containers that utilize links. IP
 addresses and ports are provided to the container via environment variables in
 this case, but often you want to run software that expects to get those in a
 config file. After dropping the envrender binary into your container, you
