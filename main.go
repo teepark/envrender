@@ -14,78 +14,6 @@ import (
 	"github.com/kballard/go-shellquote"
 )
 
-func main() {
-	var (
-		t   *template.Template
-		err error
-		wr  io.WriteCloser
-	)
-
-	env := whole_environ()
-
-	/* parse flags */
-	execp := flag.String("e", "", "command to exec after processing all files")
-	flag.Parse()
-
-	for _, path := range flag.Args() {
-
-		if path == "-" {
-			/* read stdin and parse as a template */
-			text, err := ioutil.ReadAll(os.Stdin)
-			if err != nil {
-				failwith("file read <%s>", err)
-			}
-			t = template.Must(template.New("stdin").Parse(string(text)))
-		} else {
-			/* parse the file as a template */
-			t = template.Must(template.ParseFiles(path))
-		}
-
-		if path == "-" {
-			/* send output to stdout */
-			wr = os.Stdout
-		} else {
-			/* empty and then open that same file for writing */
-			wr, err = os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0)
-			if err != nil {
-				failwith("open file for write <%s>", err)
-			}
-		}
-
-		/* execute the template with environment vars,
-		 * write the output back to the original file */
-		err := t.Execute(wr, env)
-		if err != nil {
-			failwith("render <%s>", err)
-		}
-
-		if path != "-" {
-			/* close the file writer */
-			err = wr.Close()
-			if err != nil {
-				failwith("close writer <%s>", err)
-			}
-		}
-	}
-
-	if *execp != "" {
-		/* parse shell arguments in the -e command */
-		cmd, err := shellquote.Split(*execp)
-		if err != nil {
-			failwith("shell split <%s>", err)
-		}
-
-		/* find the executable */
-		cmdpath, err := exec.LookPath(cmd[0])
-		if err != nil {
-			failwith("executable path lookup <%s>", err)
-		}
-
-		/* and exec it */
-		failwith("exec <%s>", syscall.Exec(cmdpath, cmd, os.Environ()))
-	}
-}
-
 func whole_environ() map[string]string {
 	env := os.Environ()
 	result := map[string]string{}
@@ -102,4 +30,106 @@ func whole_environ() map[string]string {
 func failwith(format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, args...)
 	os.Exit(1)
+}
+
+func processStdio(env map[string]string) {
+	var (
+		text []byte
+		err  error
+		t    *template.Template
+	)
+
+	/* read stdin to exhaustion */
+	text, err = ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		failwith("reading stdin <%s>", err)
+	}
+
+	/* parse it as a template */
+	t, err = template.New("stdin").Parse(string(text))
+	if err != nil {
+		failwith("parsing stdin template <%s>", err)
+	}
+
+	/* render with the environ to stdout */
+	if err = t.Execute(os.Stdout, env); err != nil {
+		failwith("rendering stdin template <%s>", err)
+	}
+}
+
+func processFile(path string, env map[string]string) {
+	var (
+		t   *template.Template
+		err error
+		wr  io.WriteCloser
+	)
+
+	/* parse the file as a template */
+	t, err = template.ParseFiles(path)
+	if err != nil {
+		failwith("parsing file %s <%s>", path, err)
+	}
+
+	/* empty then open the same file for writing */
+	wr, err = os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0)
+	if err != nil {
+		failwith("open file for write <%s>", err)
+	}
+
+	/* render with the environ to the open file */
+	if err = t.Execute(wr, env); err != nil {
+		failwith("render to file <%s>", err)
+	}
+
+	/* close the file */
+	if err = wr.Close(); err != nil {
+		failwith("closing writer <%s>", err)
+	}
+}
+
+func execCmd(cmd string) {
+	var (
+		err     error
+		args    []string
+		cmdpath string
+	)
+
+	/* shell-aware split the arguments */
+	args, err = shellquote.Split(cmd)
+	if err != nil {
+		failwith("shell split <%s>", err)
+	}
+
+	/* find the executable */
+	cmdpath, err = exec.LookPath(args[0])
+	if err != nil {
+		failwith("executable path lookup <%s>", err)
+	}
+
+	/* exec it */
+	if err = syscall.Exec(cmdpath, args, os.Environ()); err != nil {
+		failwith("exec <%s>", err)
+	}
+}
+
+func main() {
+	env := whole_environ()
+
+	/* parse flags */
+	execp := flag.String("e", "", "command to exec after processing all files")
+	flag.Parse()
+
+	/* process files */
+	for _, path := range flag.Args() {
+		if path == "-" {
+			processStdio(env)
+		} else {
+			processFile(path, env)
+		}
+	}
+
+	/* exec cmd if given */
+	if *execp != "" {
+		execCmd(*execp)
+	}
 }
