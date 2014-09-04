@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,9 +16,9 @@ import (
 
 func main() {
 	var (
-		t *template.Template
+		t   *template.Template
 		err error
-		wr io.WriteCloser
+		wr  io.WriteCloser
 	)
 
 	env := whole_environ()
@@ -32,7 +33,7 @@ func main() {
 			/* read stdin and parse as a template */
 			text, err := ioutil.ReadAll(os.Stdin)
 			if err != nil {
-				panic(err)
+				failwith("file read <%s>", err)
 			}
 			t = template.Must(template.New("stdin").Parse(string(text)))
 		} else {
@@ -47,7 +48,7 @@ func main() {
 			/* empty and then open that same file for writing */
 			wr, err = os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0)
 			if err != nil {
-				panic(err)
+				failwith("open file for write <%s>", err)
 			}
 		}
 
@@ -55,14 +56,14 @@ func main() {
 		 * write the output back to the original file */
 		err := t.Execute(wr, env)
 		if err != nil {
-			panic(err)
+			failwith("render <%s>", err)
 		}
 
 		if path != "-" {
 			/* close the file writer */
 			err = wr.Close()
 			if err != nil {
-				panic(err)
+				failwith("close writer <%s>", err)
 			}
 		}
 	}
@@ -71,17 +72,17 @@ func main() {
 		/* parse shell arguments in the -e command */
 		cmd, err := shellquote.Split(*execp)
 		if err != nil {
-			panic(err)
+			failwith("shell split <%s>", err)
 		}
 
 		/* find the executable */
 		cmdpath, err := exec.LookPath(cmd[0])
 		if err != nil {
-			panic(err)
+			failwith("executable path lookup <%s>", err)
 		}
 
 		/* and exec it */
-		panic(syscall.Exec(cmdpath, cmd, os.Environ()))
+		failwith("exec <%s>", syscall.Exec(cmdpath, cmd, os.Environ()))
 	}
 }
 
@@ -96,4 +97,9 @@ func whole_environ() map[string]string {
 	}
 
 	return result
+}
+
+func failwith(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, args...)
+	os.Exit(1)
 }
