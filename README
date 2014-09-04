@@ -20,7 +20,7 @@ this case, but often you want to run software that expects to get those in a
 config file. After dropping the envrender binary into your container, you
 could for example:
 
-  CMD ["envrender", "-e='node server.js'", "config.json"]
+  CMD ["envrender", "-e", "node server.js", "config.json"]
 
 and use "{{.SERVICENAME_PORT_80_TCP_ADDR}}" in the config file, allowing
 envrender to replace it with the IP address provided by the docker link before
