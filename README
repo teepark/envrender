@@ -1,0 +1,24 @@
+Envrender - simple config file processor
+
+envrender is a binary that overwrites files after running them through a
+templating language processor (go's text/template). It takes the names of the
+files to process as command line arguments, and uses environment variables as
+the render data.
+
+"-" can optionally be used as a path, in which case it will read a template
+from stdin and output the result on stdout.
+
+It also supports one flag, "-e", which takes a string of a command to exec
+after it finishes processing files.
+
+The original use-case was for docker containers that utilize links. IP
+addresses and ports are provided to the container via environment variables in
+this case, but often you want to run software that expects to get those in a
+config file. After dropping the envrender binary into your container, you
+could for example:
+
+  CMD ["envrender", "-e='node server.js'", "config.json"]
+
+and use "{{.SERVICENAME_PORT_80_TCP_ADDR}}" in the config file, allowing
+envrender to replace it with the IP address provided by the docker link before
+starting the node server.
