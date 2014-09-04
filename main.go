@@ -8,6 +8,8 @@ import (
 )
 
 func main() {
+	env := whole_environ()
+
 	for _, path := range os.Args[1:] {
 
 		/* parse the file as a template */
@@ -26,7 +28,7 @@ func main() {
 
 		/* execute the template with environment vars,
 		 * write the output back to the original file */
-		err = t.Execute(wr, environ())
+		err = t.Execute(wr, env)
 		if err != nil {
 			fmt.Println(path, "executing:", err)
 			os.Exit(1)
@@ -41,7 +43,7 @@ func main() {
 	}
 }
 
-func environ() map[string]string {
+func whole_environ() map[string]string {
 	env := os.Environ()
 	result := map[string]string{}
 	var item []string
