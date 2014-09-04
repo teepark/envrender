@@ -2,7 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -13,6 +14,12 @@ import (
 )
 
 func main() {
+	var (
+		t *template.Template
+		err error
+		wr io.WriteCloser
+	)
+
 	env := whole_environ()
 
 	/* parse flags */
@@ -21,46 +28,53 @@ func main() {
 
 	for _, path := range flag.Args() {
 
-		/* parse the file as a template */
-		t, err := template.ParseFiles(path)
-		if err != nil {
-			fmt.Println(path, "parsing:", err)
-			os.Exit(1)
+		if path == "-" {
+			/* read stdin and parse as a template */
+			text, err := ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				panic(err)
+			}
+			t = template.Must(template.New("stdin").Parse(string(text)))
+		} else {
+			/* parse the file as a template */
+			t = template.Must(template.ParseFiles(path))
 		}
 
-		/* empty and then open that same file for writing */
-		wr, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0)
-		if err != nil {
-			fmt.Println(path, "writing:", err)
-			os.Exit(1)
+		if path == "-" {
+			/* send output to stdout */
+			wr = os.Stdout
+		} else {
+			/* empty and then open that same file for writing */
+			wr, err = os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0)
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		/* execute the template with environment vars,
 		 * write the output back to the original file */
-		err = t.Execute(wr, env)
+		err := t.Execute(wr, env)
 		if err != nil {
-			fmt.Println(path, "executing:", err)
-			os.Exit(1)
+			panic(err)
 		}
 
-		/* close the file writer */
-		err = wr.Close()
-		if err != nil {
-			fmt.Println(path, "closing:", err)
-			os.Exit(1)
+		if path != "-" {
+			/* close the file writer */
+			err = wr.Close()
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 
 	if *execp != "" {
 		cmd, err := shellquote.Split(*execp)
 		if err != nil {
-			fmt.Println("cmd parse:", err)
-			os.Exit(1)
+			panic(err)
 		}
 		cmdpath, err := exec.LookPath(cmd[0])
 		if err != nil {
-			fmt.Println("cmd lookup:", err)
-			os.Exit(1)
+			panic(err)
 		}
 		syscall.Exec(cmdpath, cmd, os.Environ())
 	}
