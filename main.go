@@ -21,6 +21,9 @@ func whole_environ() map[string]string {
 
 	for _, pair := range env {
 		item = strings.SplitN(pair, "=", 2)
+		if len(item) < 2 {
+			failwith("invalid item from os.Environ")
+		}
 		result[item[0]] = item[1]
 	}
 
