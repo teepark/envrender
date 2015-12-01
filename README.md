@@ -1,6 +1,9 @@
 envrender - push the environment into config files
 ==================================================
 
+[![Circle
+CI](https://circleci.com/gh/teepark/envrender/tree/master.svg?style=svg)](https://circleci.com/gh/teepark/envrender/tree/master)
+
 Some of us like to keep our application's [configuration in the
 environment](http://12factor.net/config), but software we may rely on doesn't
 always play by those rules. If you are already managing configuration
