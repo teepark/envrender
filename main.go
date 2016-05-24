@@ -11,15 +11,6 @@ import (
 )
 
 func main() {
-	var wsEaters bool
-
-	flag.BoolVar(
-		&wsEaters,
-		"w",
-		true,
-		"support whitespace {{- eating -}} tag-delimiters",
-	)
-
 	flag.Usage = usage
 	flag.Parse()
 
@@ -51,7 +42,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = render(input, output, env, wsEaters)
+		err = render(input, output, env)
 		if err != nil {
 			log.Fatal(err)
 		}

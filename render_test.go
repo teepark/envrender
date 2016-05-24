@@ -9,7 +9,7 @@ func TestRenderSetsValues(t *testing.T) {
 	in := bytes.NewBuffer([]byte("{{ .FOO }}, plain"))
 	out := new(bytes.Buffer)
 
-	err := render(in, out, map[string]string{"FOO": "from var"}, false)
+	err := render(in, out, map[string]string{"FOO": "from var"})
 	if err != nil {
 		t.Fatalf("error from render: %s", err)
 	}
@@ -27,7 +27,7 @@ func TestRenderEatsWhitespace(t *testing.T) {
 	in := bytes.NewBuffer([]byte("\t{{- .FOO -}} \n   , plain"))
 	out := new(bytes.Buffer)
 
-	err := render(in, out, map[string]string{"FOO": "from var"}, true)
+	err := render(in, out, map[string]string{"FOO": "from var"})
 	if err != nil {
 		t.Fatalf("error from render: %s", err)
 	}
