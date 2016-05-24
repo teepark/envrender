@@ -75,11 +75,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintf(
-		os.Stderr,
-		"Usage of %s: %s [flags] src:dest... prog...\n",
-		os.Args[0], os.Args[0],
-	)
+	fmt.Fprintf(os.Stderr, "Usage: %s [flags] src:dest... prog...\n", os.Args[0])
 	flag.PrintDefaults()
 }
 
