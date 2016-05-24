@@ -29,26 +29,26 @@ func main() {
 	var stdinUsed, stdoutUsed bool
 
 	for _, job := range jobs {
-		input, err := getInput(job.src)
-		if err != nil {
-			log.Fatal(err)
-		}
 		if job.src == "-" {
 			if stdinUsed {
 				log.Fatal("attempted to use stdin twice")
 			}
 			stdinUsed = true
 		}
-
-		output, err := getOutput(job.dest)
-		if err != nil {
-			log.Fatal(err)
-		}
 		if job.dest == "-" {
 			if stdoutUsed {
 				log.Fatal("attempted to use stdout twice")
 			}
 			stdoutUsed = true
+		}
+
+		input, err := getInput(job.src)
+		if err != nil {
+			log.Fatal(err)
+		}
+		output, err := getOutput(job.dest)
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		err = render(input, output, env, wsEaters)
