@@ -7,12 +7,31 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"syscall"
 )
 
 func main() {
+	var createPerms string
+	flag.StringVar(
+		&createPerms,
+		"create_perms",
+		"644",
+		"octal permissions to set on created output files",
+	)
+
 	flag.Usage = usage
 	flag.Parse()
+
+	perms, err := parsePerms(createPerms)
+	if err != nil {
+		log.Fatalf("error parsing -create_perms: %s", err)
+	}
+
+	newMask := 0777 - perms
+	oldMask := syscall.Umask(newMask)
+	newMask |= oldMask
+	syscall.Umask(newMask)
 
 	env := envMap()
 	jobs, rest := splitArgs(flag.Args())
@@ -61,6 +80,8 @@ func main() {
 		}
 	}
 
+	syscall.Umask(oldMask)
+
 	if len(rest) > 0 {
 		cmd, err := exec.LookPath(rest[0])
 		if err != nil {
@@ -90,5 +111,10 @@ func getOutput(dest string) (io.WriteCloser, error) {
 	if dest == "-" {
 		return os.Stdout, nil
 	}
-	return os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	return os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+}
+
+func parsePerms(perms string) (int, error) {
+	n, err := strconv.ParseUint(perms, 8, 64)
+	return int(n), err
 }
